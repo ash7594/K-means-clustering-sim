@@ -74,14 +74,45 @@ var controller = function() {
 
 		if (self.kmeansstart) {
 			self.drawMeans();
+			self.anim();
 		}
 	};
 	this.draw();
 
+	this.anim = function() {
+		self.circleRad++;
+		var checker = 0;
+		ctx.strokeStyle = self.m_color;
+		self.means.forEach(function(pixel, index) {
+			if (self.Ds[index] >= self.circleRad) {
+				ctx.beginPath();
+				ctx.arc(pixel.x, pixel.y, self.circleRad, 0, 2*Math.PI);
+				ctx.closePath();
+				ctx.stroke();
+			} else {
+				ctx.beginPath();
+				ctx.arc(pixel.x, pixel.y, self.Ds[index], 0, 2*Math.PI);
+				ctx.closePath();
+				ctx.stroke();
+				checker++;
+			}
+		});
+		if (checker == self.k) {
+			self.circleRad = 0;
+			//self.kmeansstart = false;
+			self.nextIter();
+		}
+	};
+
 	this.means = [];
+	this.meanD = [];
+	this.Ds = [];
+	this.circleRad = 0;
 
 	this.kmeans = function() {
 		self.means = [];
+		self.meanD = new Array(self.p_num);
+		self.Ds = new Array(self.k);
 		shuffle(self.pixels);
 		if (self.k >= self.p_num) {
 			self.message = "Check k value!";
@@ -91,6 +122,97 @@ var controller = function() {
 			}
 			self.message = "Iteration 1";
 			self.kmeansstart = true;
+
+			console.log(self.means);
+
+			for (var i=0;i<self.p_num;i++)
+				self.meanD[i] = [];
+			for (var i=0;i<self.p_num;i++) {
+				for (var j=0;j<self.k;j++) {
+					self.meanD[i].push(Math.sqrt(Math.pow(self.pixels[i].y - self.means[j].y,2) + Math.pow(self.pixels[i].x - self.means[j].x,2)));
+				}
+
+				var small = self.meanD[i][0];
+				var index = 0;
+				for (var j=1;j<self.k;j++) {
+					if (self.meanD[i][j] < small) {
+						small = self.meanD[i][j];
+						index = j;
+					}	
+				}
+
+				for (var j=0;j<self.k;j++) {
+					if (j != index) self.meanD[i][j] = -1;
+				}
+			}
+
+			for (var i=0;i<self.k;i++) {
+				var big = 0;
+				for (var j=0;j<self.p_num;j++) {
+					if (self.meanD[j][i] == -1) continue;
+					big = (big < self.meanD[j][i])?self.meanD[j][i]:big;
+				}
+				self.Ds[i] = big;
+			}
+		}
+	};
+
+	this.nextIter = function() {
+		var newmeans = [];
+		for (var i=0;i<self.k;i++) {
+			var addx = 0, addy = 0;
+			var num = 0;
+			for (var j=0;j<self.p_num;j++) {
+				if (self.meanD[j][i] == -1) continue;
+				addx += self.pixels[j].x;
+				addy += self.pixels[j].y;
+				num++;
+			}
+			//console.log(addx/num);
+			newmeans.push({x: addx/num, y: addy/num});
+		}
+		console.log("ok");
+		console.log(newmeans);
+
+		self.means = newmeans;
+		console.log(self.means);
+
+		self.meanD = new Array(self.p_num);
+		self.Ds = new Array(self.k);
+		if (self.k >= self.p_num) {
+			self.message = "Check k value!";
+		} else {
+			self.message = "Iteration 1";
+
+			for (var i=0;i<self.p_num;i++)
+				self.meanD[i] = [];
+			for (var i=0;i<self.p_num;i++) {
+				for (var j=0;j<self.k;j++) {
+					self.meanD[i].push(Math.sqrt(Math.pow(self.pixels[i].y - self.means[j].y,2) + Math.pow(self.pixels[i].x - self.means[j].x,2)));
+				}
+
+				var small = self.meanD[i][0];
+				var index = 0;
+				for (var j=1;j<self.k;j++) {
+					if (self.meanD[i][j] < small) {
+						small = self.meanD[i][j];
+						index = j;
+					}	
+				}
+
+				for (var j=0;j<self.k;j++) {
+					if (j != index) self.meanD[i][j] = -1;
+				}
+			}
+
+			for (var i=0;i<self.k;i++) {
+				var big = 0;
+				for (var j=0;j<self.p_num;j++) {
+					if (self.meanD[j][i] == -1) continue;
+					big = (big < self.meanD[j][i])?self.meanD[j][i]:big;
+				}
+				self.Ds[i] = big;
+			}
 		}
 	};
 
@@ -98,7 +220,7 @@ var controller = function() {
 		ctx.fillStyle = self.m_color;
 		self.means.forEach(function(pixel) {
 			ctx.beginPath();
-			ctx.arc(pixel.x, pixel.y, self.p_rad, 0, 2*Math.PI);
+			ctx.arc(pixel.x, pixel.y, self.p_rad-2, 0, 2*Math.PI);
 			ctx.closePath();
 			ctx.fill();
 		});
