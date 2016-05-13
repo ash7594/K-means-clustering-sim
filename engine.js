@@ -107,6 +107,7 @@ var controller = function() {
 	this.means = [];
 	this.meanD = [];
 	this.Ds = [];
+	this.iterNo = 1;
 	this.circleRad = 0;
 
 	this.kmeans = function() {
@@ -120,7 +121,8 @@ var controller = function() {
 			for (var i=0; i<self.k; i++) {
 				self.means.push(self.pixels[i]);
 			}
-			self.message = "Iteration 1";
+			self.iterNo = 1;
+			self.message = "Iteration " + self.iterNo;
 			self.kmeansstart = true;
 
 			console.log(self.means);
@@ -158,6 +160,7 @@ var controller = function() {
 	};
 
 	this.nextIter = function() {
+		self.iterNo++;
 		var newmeans = [];
 		for (var i=0;i<self.k;i++) {
 			var addx = 0, addy = 0;
@@ -182,7 +185,7 @@ var controller = function() {
 		if (self.k >= self.p_num) {
 			self.message = "Check k value!";
 		} else {
-			self.message = "Iteration 1";
+			self.message = "Iteration " + self.iterNo;
 
 			for (var i=0;i<self.p_num;i++)
 				self.meanD[i] = [];
